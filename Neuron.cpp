@@ -1,9 +1,11 @@
 #include "Neuron.h"
-
 #include <stdlib.h>
+#include <stdio.h>
+#include <algorithm>
 
-Neuron::Neuron(int i) {
+Neuron::Neuron(int i, Neuron::NeuronType nt) {
     id = i;
+    type = nt;
     bias = (double)rand() / RAND_MAX;
     threshold = (double)rand() / RAND_MAX + 1;
     double t = (double)clock();
@@ -56,10 +58,56 @@ double Neuron::fire(double weight) {
     if(value >= threshold) {
        for(int i = 0; i < connections.size(); ++i) {
            conn_weight = connections[i].weight;
-           connections[i].target->fire(conn_weight);
+           connections[i].partner->fire(conn_weight);
        }
        value = bias;
        return 1;
     }
     return 0;
+}
+
+bool Neuron::isConnected() {
+    if(connections.size() < 1) return false;
+    if(connections.size() >= 1) {
+        if(type == Input) return true;
+        if(type == Output) return true;
+    }
+    if(type == Middle) {
+        if(connections.size() == 1) return false;
+        bool isConn = false;
+        bool hasIn = false;
+        bool hasOut = false;
+        for(int i = 0; i < connections.size(); ++i) {
+            hasIn = hasIn || connections[i].type == In;
+            hasOut = hasOut || connections[i].type == Out;
+            if(hasIn && hasOut) {
+                isConn = true;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+int Neuron::connect(Neuron * target) {
+    if(connections.size() > 0) {
+        for(int i = 0; i < connections.size(); ++i) {
+            Connection * c = &connections[i];
+
+            Neuron * p = connections[i].partner;
+            if(connections[i].partner->id == target->id) return 2;
+        }
+    }
+    int w = rand() % RAND_MAX;
+    Connection conn;
+    conn.partner = target;
+    conn.weight = w;
+    conn.type = Out;
+    connections.push_back(conn);
+    Connection connfortarget;
+    connfortarget.weight = w;
+    connfortarget.partner = this;
+    connfortarget.type = In;
+    target->connections.push_back(connfortarget);
+    return -1;
 }
