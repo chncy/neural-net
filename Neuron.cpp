@@ -6,8 +6,8 @@
 Neuron::Neuron(int i, Neuron::NeuronType nt) {
     id = i;
     type = nt;
-    bias = (double)rand() / RAND_MAX;
-    threshold = (double)rand() / RAND_MAX + 1;
+    bias = (double)rand() / (double)RAND_MAX;
+    threshold = PREDEFINED_THRESHOLD;       //(double)rand() / (double)RAND_MAX + 1;
     double t = (double)clock();
     lastcall = t;
     fadetime = 0.000001;
@@ -24,6 +24,15 @@ Neuron::Neuron(int i, Neuron * old) {
     error = -1;
 }
 
+Neuron::Neuron(int i, NeuronType nt, double n_bias, double n_threshold, double n_fadetime) {
+    id = i;
+    type = nt;
+    bias = n_bias;
+    threshold = n_threshold;
+    fadetime = n_fadetime;
+    value = bias;
+}
+
 Neuron::Neuron(int i, double n_bias, double n_threshold, std::vector<Connection> n_connections) {
     id = i;
     bias = n_bias;
@@ -32,7 +41,7 @@ Neuron::Neuron(int i, double n_bias, double n_threshold, std::vector<Connection>
     error = -1;
     double t = (double)clock();
     lastcall = t;
-    fadetime = 0.000001;
+    fadetime = FADETIME_PER_CLOCK;
 }
 
 Neuron::~Neuron() {
@@ -49,6 +58,8 @@ double Neuron::fire(double weight) {
     double conn_weight;
     double t = (double)clock();
     double timepassed = t - lastcall;
+    printf("\nId: %i Got Input Weight: %f, Bias: %f Threshold: %f, time: %f, CPS:%f",this->id, weight, this->bias, this->threshold, t, (double)CLOCKS_PER_SEC);
+
     value -= timepassed * fadetime;
     if(value < bias) {
         value = bias;
@@ -57,8 +68,12 @@ double Neuron::fire(double weight) {
     value += weight;
     if(value >= threshold) {
        for(int i = 0; i < connections.size(); ++i) {
-           conn_weight = connections[i].weight;
-           connections[i].partner->fire(conn_weight);
+           if (connections[i].type == Out){
+               conn_weight = connections[i].weight;
+               printf("\nFiring Weight:%f to Id: %i, time %f",conn_weight, connections[i].partner->id, t);               
+               connections[i].partner->fire(conn_weight);
+
+           }  
        }
        value = bias;
        return 1;
@@ -95,10 +110,12 @@ int Neuron::connect(Neuron * target) {
             Connection * c = &connections[i];
 
             Neuron * p = connections[i].partner;
-            if(connections[i].partner->id == target->id) return 2;
+            if(connections[i].partner->id == target->id) return 1;
         }
     }
-    int w = rand() % RAND_MAX;
+    double w = rand() / (double)RAND_MAX;
+    printf("\n Conn id: %i Target id: %i ", this->id, target->id);               
+
     Connection conn;
     conn.partner = target;
     conn.weight = w;
@@ -109,5 +126,29 @@ int Neuron::connect(Neuron * target) {
     connfortarget.partner = this;
     connfortarget.type = In;
     target->connections.push_back(connfortarget);
-    return -1;
+    return 0;
+}
+
+int Neuron::connect(Neuron * target, double n_weight) {
+    if(connections.size() > 0) {
+        for(int i = 0; i < connections.size(); ++i) {
+            Connection * c = &connections[i];
+
+            Neuron * p = connections[i].partner;
+            if(connections[i].partner->id == target->id) return 1;
+        }
+    }
+    printf("\n Conn from db id: %i Target id: %i ", this->id, target->id);               
+
+    Connection conn;
+    conn.partner = target;
+    conn.weight = n_weight;
+    conn.type = Out;
+    connections.push_back(conn);
+    Connection connfortarget;
+    connfortarget.weight = n_weight;
+    connfortarget.partner = this;
+    connfortarget.type = In;
+    target->connections.push_back(connfortarget);
+    return 0;
 }

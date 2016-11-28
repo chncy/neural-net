@@ -1,29 +1,31 @@
 #include <vector>
 #include <stdlib.h>
-#include "Layer.h"
+#include <fcntl.h>
+#include <string.h>
+//#include <sys/stat.h>
+#include <unistd.h>
 
-#define MAX_NEURON_PL 30
-#define MIN_LAYER_CNT 4
-#define CONNECTION_JUMP 2
+#include "Layer.h"
+#include "Macros.h"
+
 
 class Net {
-    private:
-     int size_;
     public:
-     int size() const {
-         return size_;
-     }
-
-     void size(int i) {
-         size_ = i;
-     }
+     int size;
      int neuronindex;
      int id;
+     char name[20];
      
-     std::vector<Layer> members;
+     std::vector<Layer> layers;
 
+     Net();
      Net(int i, int lc, int io[]);
      ~Net();
+     
+     
+     int get_neuronindex();
+     Neuron * get_Neuron(int i);
+     int Bullshit();
+     int pipe_send(std::string pipename);
 
-     void Bullshit();
 };
